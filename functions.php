@@ -24,19 +24,51 @@ function root_rest_cpt_1($request)
 {
     $return = [];
     $slug = $request->get_param('slug');
+    $parameters = $request->get_query_params();
     if ($slug) {
-        $args = [
+        $query_args = [
             'post_type'   => [CPT_1],
             'name'        => $slug,
             'posts_per_page' => 1
         ];
     } else {
-        $args = [
-            'post_type'   => [CPT_1],
-            'posts_per_page' => 100
-        ];
+        $defaults = array(
+            'post_type' => [CPT_1],
+            'limit' => 10,
+            'page' => 1,
+            'orderby' => 'date',
+            'order' => 'DESC',
+            'search' => '',
+            'categories' => '',
+            'tags' => '',
+        );
+        
+        $args = wp_parse_args( $parameters, $defaults );
+    
+        $offset = $args['limit'] * ( $args['page'] - 1 );
+    
+        $query_args = array(
+        'post_type' => [CPT_1],
+        'orderby' => $args['orderby'],
+        'order' => $args['order'],
+        'posts_per_page' => $args['limit'],
+        'offset' => $offset,
+        );
+    
+        if ( $args['search'] ) {
+            $query_args['s'] = $args['search'];
+        }
+    
+        if ( $args['categories'] ) {
+            $query_args['category_name'] = $args['categories'];
+        }
+
+        if ( $args['tags'] ) {
+            $query_args['tag'] = $args['tags'];
+        }
     }
-    $the_query = new WP_Query($args);
+
+    $the_query = new WP_Query( $query_args );
     if ($the_query->have_posts()) {
         while ($the_query->have_posts()) {
             $the_query->the_post();
